@@ -727,7 +727,7 @@ func (d *evaluationStateData) GetResource(addr addrs.Resource, rng tfdiags.Sourc
 		}
 
 		// Planned resources are temporarily stored in state with empty values,
-		// and need to be replaced bu the planned value here.
+		// and need to be replaced by the planned value here.
 		if is.Current.Status == states.ObjectPlanned {
 			if change == nil {
 				// If the object is in planned status then we should not get
@@ -752,6 +752,13 @@ func (d *evaluationStateData) GetResource(addr addrs.Resource, rng tfdiags.Sourc
 				continue
 			}
 
+			// If our schema contains sensitive values, mark it as sensitive
+			if schema.ContainsSensitive() {
+				// TODO need to interact with the value structure
+				// and reference the schema -- we should
+				// not mark the *whole* value as sensitive.
+				val = val.Mark("sensitive")
+			}
 			instances[key] = val
 			continue
 		}
@@ -767,6 +774,11 @@ func (d *evaluationStateData) GetResource(addr addrs.Resource, rng tfdiags.Sourc
 				Subject:  &config.DeclRange,
 			})
 			continue
+		}
+
+		// If our schema contains sensitive values, mark it as sensitive
+		if schema.ContainsSensitive() {
+			ios.Value = ios.Value.Mark("sensitive")
 		}
 		instances[key] = ios.Value
 	}
